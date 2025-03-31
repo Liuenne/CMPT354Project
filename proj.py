@@ -3,6 +3,8 @@ from datetime import datetime, timedelta, time
 
 class LibraryApp:
     def __init__(self):
+        questions = {}
+        nxt_Q = 1
         self.conn = sqlite3.connect('library.db')
         self.conn.row_factory = sqlite3.Row
         self.cursor = self.conn.cursor()
@@ -302,8 +304,32 @@ class LibraryApp:
         except sqlite3.Error as e:
             print(f"Error registering for event: {e}")
 
+    def ask_question(self, user_id, question):
+        try:
+            self.cursor.execute(
+                "SELECT 1 FROM User WHERE UserID = ?",
+                (user_id,)
+            )
+            if not self.cursor.fetchone():
+                print("Invalid UserID.")
+                return
 
+            question_id = f"Q{self.nxt_Q}"
+            self.nxt_Q += 1
+            self.questions[question_id] = {
+                'user_id': user_id,
+                'question': question,
+                'answer': None,
+                'staff_id': None
+            }
 
+            print(f"Question ID: {question_id}")
+            print("Your question has been submitted. A Librarian will respond soon.")
+            
+        except sqlite3.Error as e:
+            print(f"Error submitting question: {e}")
+
+    
 
 
 search = input("Enter search term: ")
