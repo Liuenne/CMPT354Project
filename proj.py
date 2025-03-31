@@ -222,41 +222,83 @@ class LibraryApp:
     def register(self, user_id, event_title):
         try:
             self.cursor.execute(
-                "SELECT MaxAttendees FROM Event WHERE Title LIKE ? AND StartTime > date('now')",
-                (event_title,)
+                "SELECT MaxAttendees FROM Event WHERE Title LIKE ? AND StartTime > datetime('now')",
+                ((f"%{event_title}%",))
             )
             event = self.cursor.fetchone()
             
             if not event:
                 print("This event does not exist or event has already occurred.")
                 return
-            
+            #Take MaxAttendees and EventID
             max_attendees = event['MaxAttendees']
             event_id = event['EventID']
-            
-            # Check current registrations
-            self.cursor.execute(
-                "SELECT COUNT(*) FROM EventRegistration WHERE EventID = ?",
-                (event_id,)
-            )
-            current_attendees = self.cursor.fetchone()[0]
-            
-            if current_attendees >= max_attendees:
+
+            #Take RegisteredUsers
+            registered_users = event['RegisteredUsers']
+            if (registered_users == None):
+                registered_users = []
+            else:
+                registered_users = registered_users.split(',')
+        
+            if len(registered_users) >= max_attendees:
                 print("This event is already full.")
                 return
             
-            # Check if already registered
-            self.cursor.execute(
-                "SELECT 1 FROM EventRegistration WHERE EventID = ? AND UserID = ?",
-                (event_id, user_id)
-            )
-            if self.cursor.fetchone():
-                print("You are already registered for this event.")
+            if user_id in registered_users:
+                print("You have already registered for this event.")
                 return
             
-            # Register user
+            registered_users.append(user_id)
+            registered_users = ','.join(registered_users)
+
+            #Update registered users
+            self.cursor.execute(
+                "UPDATE Event SET RegisteredUsers = ? WHERE EventID = ?",
+                (registered_users, event_id)
+            )
+
+            self.conn.commit()
+            print("You have successfully registered for this event.")
             
-            
+        except sqlite3.Error as e:
+            print(f"Error registering for event: {e}")
+
+    def volunteer(self, user_id, event_title, position):
+        try:
+            self.cursor.execute(
+                "SELECT EventID FROM Event WHERE Title LIKE ? AND StartTime > datetime('now')",
+                (event_title,)
+            )
+
+            event = self.cursor.fetchone()
+
+            if not event:
+                print("This event does not exist or event has already occurred.")
+                return
+
+            event_id = event['EventID']
+
+            self.cursor.execute(
+                "SELECT 1 FROM User WHERE UserID = ?",
+                (user_id,)
+            )
+            if not self.cursor.fetchone():
+                print("Invalid UserID.")
+                return
+
+            volunteerPos = f"{position}@{event_id}"
+
+            #Update volunteer position
+            self.cursor.execute(
+                "UPDATE User SET VolunteerPosition = ? WHERE UserID = ?",
+                (volunteerPos, user_id)
+            )
+
+            self.conn.commit()
+            print("You have successfully volunteered for this event.")
+
+        
         except sqlite3.Error as e:
             print(f"Error registering for event: {e}")
 
