@@ -3,8 +3,8 @@ from datetime import datetime, timedelta, time
 
 class LibraryApp:
     def __init__(self):
-        questions = {}
-        nxt_Q = 1
+        self.questions = {}
+        self.nxt_Q = 1
         self.conn = sqlite3.connect('library.db')
         self.conn.row_factory = sqlite3.Row
         self.cursor = self.conn.cursor()
@@ -31,7 +31,7 @@ class LibraryApp:
         results = self.cursor.fetchall()
         
         if not results:
-            print("No items found matching your search.")
+            print("\nNo items found matching your search.")
         else:
             print("\nSearch Results:")
             print("-" * 80)
@@ -47,7 +47,7 @@ class LibraryApp:
             item_status = self.cursor.fetchone()[0]
 
             if item_status != 'Available':
-                    print("This item is not available for borrowing.")
+                    print("\nThis item is not available for borrowing.")
                     return
             
             transaction_id = f"T{datetime.now().strftime('%Y%m%d%H%M%S')}"
@@ -65,7 +65,7 @@ class LibraryApp:
             )
             
             self.conn.commit()
-            print(f"Item successfully borrowed. Due date: {due_date.strftime('%Y-%m-%d')}")
+            print(f"\nItem successfully borrowed. Due date: {due_date.strftime('%Y-%m-%d')}")
             
         except sqlite3.Error as e:
             print(f"Error Borrowing Item: {e}")
@@ -79,7 +79,7 @@ class LibraryApp:
             transaction = self.cursor.fetchone()
             
             if not transaction:
-                print("No active borrowing transaction found with this ID.")
+                print("\nNo active borrowing transaction found with this ID.")
                 return
             
             item_id, due_date = transaction
@@ -96,14 +96,14 @@ class LibraryApp:
             )
             
             self.conn.commit()
-            print("Item successfully returned.")
+            print("\nItem successfully returned.")
             
         except sqlite3.Error as e:
             print(f"Error returning item: {e}")
         
     def donate_item(self, item_details):
         try:
-            prefix = self._get_item_prefix(item_details)
+            prefix = item_details['item_type']
             
             self.cursor.execute(
                 "SELECT MAX(ItemID) FROM LibraryItem WHERE ItemID LIKE ? || '%'",
@@ -175,11 +175,11 @@ class LibraryApp:
                 )
             
             self.conn.commit()
-            return f"Thank you for your donation! New item ID: {item_id}"
+            return f"\nThank you for your donation! New item ID: {item_id}"
             
         except sqlite3.Error as e:
             self.conn.rollback()
-            return f"Error processing donation: {str(e)}"
+            return f"\nError processing donation: {str(e)}"
         
     def display_events(self, search_term=None, upcoming_only=True):
         query = """
@@ -207,7 +207,7 @@ class LibraryApp:
         self.cursor.execute(query, params)
         events = self.cursor.fetchall()
         
-        print("Displaying Events:")
+        print("\nDisplaying Events:")
         if not events:
             print("No events found matching your criteria.")
         else:
@@ -230,7 +230,7 @@ class LibraryApp:
             event = self.cursor.fetchone()
             
             if not event:
-                print("This event does not exist or event has already occurred.")
+                print("\nThis event does not exist or event has already occurred.")
                 return
             #Take MaxAttendees and EventID
             max_attendees = event['MaxAttendees']
@@ -244,11 +244,11 @@ class LibraryApp:
                 registered_users = registered_users.split(',')
         
             if len(registered_users) >= max_attendees:
-                print("This event is already full.")
+                print("\nThis event is already full.")
                 return
             
             if user_id in registered_users:
-                print("You have already registered for this event.")
+                print("\nYou have already registered for this event.")
                 return
             
             registered_users.append(user_id)
@@ -261,7 +261,7 @@ class LibraryApp:
             )
 
             self.conn.commit()
-            print("You have successfully registered for this event.")
+            print("\nYou have successfully registered for this event.")
             
         except sqlite3.Error as e:
             print(f"Error registering for event: {e}")
@@ -276,7 +276,7 @@ class LibraryApp:
             event = self.cursor.fetchone()
 
             if not event:
-                print("This event does not exist or event has already occurred.")
+                print("\nThis event does not exist or event has already occurred.")
                 return
 
             event_id = event['EventID']
@@ -286,7 +286,7 @@ class LibraryApp:
                 (user_id,)
             )
             if not self.cursor.fetchone():
-                print("Invalid UserID.")
+                print("\nInvalid UserID.")
                 return
 
             volunteerPos = f"{position}@{event_id}"
@@ -298,11 +298,11 @@ class LibraryApp:
             )
 
             self.conn.commit()
-            print("You have successfully volunteered for this event.")
+            print("\nYou have successfully volunteered for this event.")
 
         
         except sqlite3.Error as e:
-            print(f"Error registering for event: {e}")
+            print(f"\nError registering for event: {e}")
 
     def ask_question(self, user_id, question):
         try:
@@ -311,7 +311,7 @@ class LibraryApp:
                 (user_id,)
             )
             if not self.cursor.fetchone():
-                print("Invalid UserID.")
+                print("\nInvalid UserID.")
                 return
 
             question_id = f"Q{self.nxt_Q}"
@@ -323,20 +323,104 @@ class LibraryApp:
                 'staff_id': None
             }
 
-            print(f"Question ID: {question_id}")
+            print(f"\nQuestion ID: {question_id}")
             print("Your question has been submitted. A Librarian will respond soon.")
             
         except sqlite3.Error as e:
             print(f"Error submitting question: {e}")
 
     
+def main():
+    app = LibraryApp()
+    while True:
+        print("\nLibrary Management System\n" + "=" * 80)
+        print("1. Search for items")
+        print("2. Borrow an item")
+        print("3. Return an item")
+        print("4. Donate an item")
+        print("5. View events")
+        print("6. Register for an event")
+        print("7. Volunteer for an event")
+        print("8. Ask a question")
+        print("9. Exit") 
 
+        choice = input("Enter your choice: ")
 
-search = input("Enter search term: ")
-app = LibraryApp()
-app.find_item(search)
-app.display_events(None, False)
+        if choice == "1":
+            app.find_item(input("Enter search term: "))
+        elif choice == "2":
+            user_id = input("Enter your ID: ")
+            app.borrow_item(user_id,input("Enter item ID: "))
+        elif choice == "3":
+            transaction_id = input("Enter the transaction ID of the item you're returning: ")
+            app.return_item(transaction_id)
+        elif choice == "4":
+            print("\nItem Donation Form")
+            item_details = {}
+            item_details['item_type'] = input("Item type (Book/Media/Periodical): ").capitalize()
+            item_details['title'] = input("Title: ")
+            
+            if item_details['item_type'] == 'Book':
+                item_details['book_type'] = input("Book type (PrintBook/OnlineBook): ")
+                item_details['author'] = input("Author: ")
+                item_details['isbn'] = input("ISBN (optional, press Enter to skip): ") or None
+                item_details['publisher'] = input("Publisher (optional): ") or None
+                item_details['publication_year'] = input("Publication year (optional): ") or None
+                item_details['edition'] = input("Edition (optional): ") or None
+                
+                if item_details['book_type'] == 'PrintBook':
+                    item_details['shelf_location'] = input("Shelf location: ")
+                    item_details['condition'] = input("Condition (New/Good/Fair/Poor): ")
+                else:
+                    item_details['url'] = input("Online URL: ")
+                    item_details['access_key'] = input("Access key (optional): ") or None
 
+            elif item_details['item_type'] == 'Media':
+                item_details['media_type'] = input("Media type (CD/DVD/Vinyl/Other): ")
+                item_details['artist'] = input("Artist/Producer: ")
+                item_details['release_year'] = input("Release year (optional): ") or None
+                item_details['duration'] = input("Duration in minutes (optional): ") or None
+            
+            elif item_details['item_type'] == 'Periodical':
+                item_details['periodical_type'] = input("Periodical type (Magazine/Journal/Newspaper): ")
+                item_details['issn'] = input("ISSN (optional): ") or None
+                item_details['issue_number'] = input("Issue number/date: ")
+                item_details['publication_date'] = input("Publication date (YYYY-MM-DD): ")
+                
+            item_details['location_code'] = input("Location code (optional): ") or None
+            
+            result = app.donate_item(item_details)
+            print(result)
+        elif choice == "5":
+            # View events
+            search_term = input("Enter search term (optional, press Enter to see all): ") or None
+
+            upcoming_only = input("Show only upcoming events? (y/n): ")
+            if upcoming_only.lower() == "y":
+                upcoming_only = True
+            else:
+                upcoming_only = False
+            app.display_events(search_term, upcoming_only)
+        elif choice == "6":
+            user_id = input("Enter your user ID: ")
+            event_title = input("Enter event title: ")
+            app.register(user_id, event_title)
+        elif choice == "7":
+            user_id = input("Enter your user ID: ")
+            event_title = input("Enter event title: ")
+            position = input("Enter desired volunteer position: ")
+            app.volunteer(user_id, event_title, position)
+        elif choice == "8":
+            user_id = input("Enter your user ID: ")
+            question = input("Enter your question: ")
+            app.ask_question(user_id, question)
+        elif choice == "9":
+            print("Thank you for using the Library Management System. Goodbye!")
+            break
+        else:
+            print("Invalid choice. Please try again.")
+
+main()
 """
 item_details = {
     'item_type': 'Book',
