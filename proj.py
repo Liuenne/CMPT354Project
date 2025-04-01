@@ -31,7 +31,7 @@ class LibraryApp:
         results = self.cursor.fetchall()
         
         if not results:
-            print("No items found matching your search.")
+            print("\nNo items found matching your search.")
         else:
             print("\nSearch Results:")
             print("-" * 80)
@@ -47,7 +47,7 @@ class LibraryApp:
             item_status = self.cursor.fetchone()[0]
 
             if item_status != 'Available':
-                    print("This item is not available for borrowing.")
+                    print("\nThis item is not available for borrowing.")
                     return
             
             transaction_id = f"T{datetime.now().strftime('%Y%m%d%H%M%S')}"
@@ -65,7 +65,7 @@ class LibraryApp:
             )
             
             self.conn.commit()
-            print(f"Item successfully borrowed. Due date: {due_date.strftime('%Y-%m-%d')}")
+            print(f"\nItem successfully borrowed. Due date: {due_date.strftime('%Y-%m-%d')}")
             
         except sqlite3.Error as e:
             print(f"Error Borrowing Item: {e}")
@@ -79,7 +79,7 @@ class LibraryApp:
             transaction = self.cursor.fetchone()
             
             if not transaction:
-                print("No active borrowing transaction found with this ID.")
+                print("\nNo active borrowing transaction found with this ID.")
                 return
             
             item_id, due_date = transaction
@@ -96,7 +96,7 @@ class LibraryApp:
             )
             
             self.conn.commit()
-            print("Item successfully returned.")
+            print("\nItem successfully returned.")
             
         except sqlite3.Error as e:
             print(f"Error returning item: {e}")
@@ -175,11 +175,11 @@ class LibraryApp:
                 )
             
             self.conn.commit()
-            return f"Thank you for your donation! New item ID: {item_id}"
+            return f"\nThank you for your donation! New item ID: {item_id}"
             
         except sqlite3.Error as e:
             self.conn.rollback()
-            return f"Error processing donation: {str(e)}"
+            return f"\nError processing donation: {str(e)}"
         
     def display_events(self, search_term=None, upcoming_only=True):
         query = """
@@ -207,7 +207,7 @@ class LibraryApp:
         self.cursor.execute(query, params)
         events = self.cursor.fetchall()
         
-        print("Displaying Events:")
+        print("\nDisplaying Events:")
         if not events:
             print("No events found matching your criteria.")
         else:
@@ -230,7 +230,7 @@ class LibraryApp:
             event = self.cursor.fetchone()
             
             if not event:
-                print("This event does not exist or event has already occurred.")
+                print("\nThis event does not exist or event has already occurred.")
                 return
             #Take MaxAttendees and EventID
             max_attendees = event['MaxAttendees']
@@ -244,11 +244,11 @@ class LibraryApp:
                 registered_users = registered_users.split(',')
         
             if len(registered_users) >= max_attendees:
-                print("This event is already full.")
+                print("\nThis event is already full.")
                 return
             
             if user_id in registered_users:
-                print("You have already registered for this event.")
+                print("\nYou have already registered for this event.")
                 return
             
             registered_users.append(user_id)
@@ -261,7 +261,7 @@ class LibraryApp:
             )
 
             self.conn.commit()
-            print("You have successfully registered for this event.")
+            print("\nYou have successfully registered for this event.")
             
         except sqlite3.Error as e:
             print(f"Error registering for event: {e}")
@@ -276,7 +276,7 @@ class LibraryApp:
             event = self.cursor.fetchone()
 
             if not event:
-                print("This event does not exist or event has already occurred.")
+                print("\nThis event does not exist or event has already occurred.")
                 return
 
             event_id = event['EventID']
@@ -286,7 +286,7 @@ class LibraryApp:
                 (user_id,)
             )
             if not self.cursor.fetchone():
-                print("Invalid UserID.")
+                print("\nInvalid UserID.")
                 return
 
             volunteerPos = f"{position}@{event_id}"
@@ -298,11 +298,11 @@ class LibraryApp:
             )
 
             self.conn.commit()
-            print("You have successfully volunteered for this event.")
+            print("\nYou have successfully volunteered for this event.")
 
         
         except sqlite3.Error as e:
-            print(f"Error registering for event: {e}")
+            print(f"\nError registering for event: {e}")
 
     def ask_question(self, user_id, question):
         try:
@@ -311,7 +311,7 @@ class LibraryApp:
                 (user_id,)
             )
             if not self.cursor.fetchone():
-                print("Invalid UserID.")
+                print("\nInvalid UserID.")
                 return
 
             question_id = f"Q{self.nxt_Q}"
@@ -323,7 +323,7 @@ class LibraryApp:
                 'staff_id': None
             }
 
-            print(f"Question ID: {question_id}")
+            print(f"\nQuestion ID: {question_id}")
             print("Your question has been submitted. A Librarian will respond soon.")
             
         except sqlite3.Error as e:
