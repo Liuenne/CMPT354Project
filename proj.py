@@ -50,6 +50,16 @@ class LibraryApp:
                     print("\nThis item is not available for borrowing.")
                     return
             
+            self.cursor.execute("SELECT 1 FROM User WHERE UserID = ?", (user_id,))
+            if not self.cursor.fetchone():
+                print("\nInvalid UserID.")
+                return
+            
+            self.cursor.execute("SELECT 1 FROM LibraryItem WHERE ItemID = ?", (item_id,))
+            if not self.cursor.fetchone():
+                print("\nInvalid ItemID.")
+                return
+            
             self.cursor.execute("SELECT * FROM BorrowingTransaction WHERE UserID = ? AND ReturnDate IS NULL AND DueDate > datetime('now')",
                                  (user_id,)
                                  )
@@ -57,6 +67,7 @@ class LibraryApp:
             totalFine = 0
             for row in overdue:
                 totalFine += row['FineAmount']
+            print(totalFine)
 
             if totalFine > 10:
                 print("\nYou have a total fine of ${:.2f}. Please return overdure items or pat the fines before borrowing again".format(totalFine))
@@ -71,10 +82,12 @@ class LibraryApp:
                 transaction_id = "T001"
             checkout_date = datetime.now()
             due_date = checkout_date + timedelta(days=14)
+
+            fineAmount = 10
             
             self.cursor.execute(
-                "INSERT INTO BorrowingTransaction VALUES (?, ?, ?, ?, ?, NULL)",
-                (transaction_id, item_id, user_id, checkout_date, due_date)
+                "INSERT INTO BorrowingTransaction VALUES (?, ?, ?, ?, ?, NULL, ?)",
+                (transaction_id, item_id, user_id, checkout_date, due_date, fineAmount)
             )
             
             self.cursor.execute(
