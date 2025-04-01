@@ -50,7 +50,25 @@ class LibraryApp:
                     print("\nThis item is not available for borrowing.")
                     return
             
-            transaction_id = f"T{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            self.cursor.execute("SELECT * FROM BorrowingTransaction WHERE UserID = ? AND ReturnDate IS NULL AND DueDate > datetime('now')",
+                                 (user_id,)
+                                 )
+            overdue = self.cursor.fetchall()
+            totalFine = 0
+            for row in overdue:
+                totalFine += row['FineAmount']
+
+            if totalFine > 10:
+                print("\nYou have a total fine of ${:.2f}. Please return overdure items or pat the fines before borrowing again".format(totalFine))
+                return
+            
+            self.cursor.execute("SELECT MAX(TransactionID) FROM BorrowingTransaction")
+            last_id = self.cursor.fetchone()[0]
+            if last_id:
+                num = int(last_id[2:]) + 1
+                transaction_id = f"T{num:03d}" 
+            else:
+                transaction_id = "T001"
             checkout_date = datetime.now()
             due_date = checkout_date + timedelta(days=14)
             
