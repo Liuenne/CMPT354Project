@@ -55,22 +55,16 @@ class LibraryApp:
                 print("\nInvalid UserID.")
                 return
             
-            self.cursor.execute("SELECT 1 FROM LibraryItem WHERE ItemID = ?", (item_id,))
-            if not self.cursor.fetchone():
-                print("\nInvalid ItemID.")
-                return
-            
-            self.cursor.execute("SELECT * FROM BorrowingTransaction WHERE UserID = ? AND ReturnDate IS NULL AND DueDate > datetime('now')",
+            self.cursor.execute("SELECT * FROM BorrowingTransaction WHERE UserID = ? AND ReturnDate IS NULL AND DueDate < datetime('now')",
                                  (user_id,)
                                  )
             overdue = self.cursor.fetchall()
             totalFine = 0
             for row in overdue:
                 totalFine += row['FineAmount']
-            print(totalFine)
 
             if totalFine > 10:
-                print("\nYou have a total fine of ${:.2f}. Please return overdure items or pat the fines before borrowing again".format(totalFine))
+                print("\nYou have a total fine of ${:.2f}. Please return overdure items or pay the fines before borrowing again".format(totalFine))
                 return
             
             self.cursor.execute("SELECT MAX(TransactionID) FROM BorrowingTransaction")
