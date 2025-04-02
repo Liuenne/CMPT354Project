@@ -43,18 +43,31 @@ class LibraryApp:
     
     def borrow_item(self, user_id, item_id):
         try:
-            self.cursor.execute("SELECT Status FROM LibraryItem WHERE ItemID = ?", (item_id,))
-            item_status = self.cursor.fetchone()[0]
+            #check if user exists
+            self.cursor.execute("SELECT Status FROM User WHERE UserID = ?", (user_id,))
+            user_status = self.cursor.fetchone()
+            if not user_status:
+                print("\nInvalid UserID.")
+                return
 
-            if item_status != 'Available':
+            #check if user has an active membership
+            if user_status['Status'] != 'Active':
+                print("\nThis user is not active.")
+                return
+
+            #check if item exists
+            self.cursor.execute("SELECT Status FROM LibraryItem WHERE ItemID = ?", (item_id,))
+            item_status = self.cursor.fetchone()
+            if not item_status:
+                print("\nInvalid ItemID.")
+                return
+            
+            #check if item is available
+            if item_status['Status'] != 'Available':
                     print("\nThis item is not available for borrowing.")
                     return
             
-            self.cursor.execute("SELECT 1 FROM User WHERE UserID = ?", (user_id,))
-            if not self.cursor.fetchone():
-                print("\nInvalid UserID.")
-                return
-            
+            #find latest transaction id
             self.cursor.execute("SELECT * FROM BorrowingTransaction WHERE UserID = ? AND ReturnDate IS NULL AND DueDate < datetime('now')",
                                  (user_id,)
                                  )
@@ -70,7 +83,7 @@ class LibraryApp:
             self.cursor.execute("SELECT MAX(TransactionID) FROM BorrowingTransaction")
             last_id = self.cursor.fetchone()[0]
             if last_id:
-                num = int(last_id[2:]) + 1
+                num = int(last_id[1:]) + 1
                 transaction_id = f"T{num:03d}" 
             else:
                 transaction_id = "T001"
@@ -248,6 +261,18 @@ class LibraryApp:
 
     def register(self, user_id, event_title):
         try:
+            #check if user exists
+            self.cursor.execute("SELECT Status FROM User WHERE UserID = ?", (user_id,))
+            user_status = self.cursor.fetchone()
+            if not user_status:
+                print("\nInvalid UserID.")
+                return
+
+            #check if user has an active membership
+            if user_status['Status'] != 'Active':
+                print("\nThis user is not active.")
+                return
+
             self.cursor.execute(
                 "SELECT MaxAttendees FROM Event WHERE Title LIKE ? AND StartTime > datetime('now')",
                 ((f"%{event_title}%",))
@@ -293,6 +318,18 @@ class LibraryApp:
 
     def volunteer(self, user_id, event_title, position):
         try:
+            #check if user exists
+            self.cursor.execute("SELECT Status FROM User WHERE UserID = ?", (user_id,))
+            user_status = self.cursor.fetchone()
+            if not user_status:
+                print("\nInvalid UserID.")
+                return
+
+            #check if user has an active membership
+            if user_status['Status'] != 'Active':
+                print("\nThis user is not active.")
+                return
+
             self.cursor.execute(
                 "SELECT EventID FROM Event WHERE Title LIKE ? AND StartTime > datetime('now')",
                 (event_title,)
@@ -331,12 +368,16 @@ class LibraryApp:
 
     def ask_question(self, user_id, question):
         try:
-            self.cursor.execute(
-                "SELECT 1 FROM User WHERE UserID = ?",
-                (user_id,)
-            )
-            if not self.cursor.fetchone():
+            #check if user exists
+            self.cursor.execute("SELECT Status FROM User WHERE UserID = ?", (user_id,))
+            user_status = self.cursor.fetchone()
+            if not user_status:
                 print("\nInvalid UserID.")
+                return
+
+            #check if user has an active membership
+            if user_status['Status'] != 'Active':
+                print("\nThis user is not active.")
                 return
 
             question_id = f"Q{self.nxt_Q}"
